@@ -83,6 +83,54 @@ The "core" workflow looks like:
     > testing strategies, etc. EGM is not opinionated here. Add your skills to
     > your implementation plan!
 
+## First-Principles Lens (Kubernetes Example)
+
+Use first-principles reasoning when a change has important architecture,
+reliability, security, cost, or migration trade-offs. It complements the core
+loop; a clear, small bug fix does not need a full design exercise.
+
+**Elephant derives the design:** State the user outcome and how to measure it.
+Gather evidence from the repository, platform, cluster, and existing decision
+records. Separate verified constraints from assumptions, conventions, and
+unknowns. Build the smallest design that meets the outcome and constraints,
+compare viable alternatives, and record what evidence would change the decision.
+
+**Goldfish challenges it:** A fresh reviewer receives the approved brief or
+design and its linked source material, not the original conversation.
+Independently check whether the requirements and implementation follow from the
+evidence. Look for assumptions treated as facts, unjustified complexity, and
+failure modes. Use inversion and second-order effects to ask what could break
+and where a proposed fix might move risk. Challenge unsupported assumptions
+without silently expanding the agreed scope.
+
+### Worked Example: Deploying an API to Kubernetes
+
+Start with an explicit request, such as: "Deploy the existing stateless API to
+the internal staging environment, keep access namespace-scoped, and make the
+release reversible."
+
+1. **Elephant verifies the inputs.** Check the target cluster and namespace,
+   build and image path, internal traffic route, secret source, resource and
+   service-level requirements, and deployment permissions. Treat Helm, a
+   service mesh, or an operator as options, not requirements, unless evidence
+   shows they are needed.
+2. **Derive the design from the constraints.** Include only the runtime,
+   network, and identity resources the service needs. Set health, traffic,
+   resource, and rollback behavior from verified application and platform
+   requirements; do not invent availability targets or capacity assumptions.
+3. **Goldfish tries to falsify the proposal.** Check that the workload's
+   statelessness and internal-only exposure are supported by evidence, access
+   stays within the namespace, secrets are referenced rather than copied, and
+   an unhealthy rollout can be detected and reversed. Ask what happens when
+   scheduling, health checks, or traffic shifting fail.
+4. **Gate execution by impact.** Use read-only integrations for discovery and
+   only preauthorized, narrowly scoped writes in approved environments.
+   Production, cluster-scoped, or destructive changes require the applicable
+   human approval; MCP access alone is not approval.
+5. **Keep the decision auditable.** Record evidence, trade-offs, approvals, the
+   deployed revision, and verification results in the project's design and
+   audit records. Store references to secrets, not secret values.
+
 ## Drift Detection
 
 To ensure that your design specifications and active codebase remain
